@@ -1,0 +1,1772 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: appdevpractice@redhat.com
+  description: |
+    This API specification contains information around the Feedback 360 Survey
+    API developed by the App Dev Practice.
+
+    The Feedback 360 Survey API enables the management of feedback surveys for
+    customer engagements. A feedback survey is N/A to 5 point scale of competency around
+    the technologies used for a project. Each added employee will be able to enhance the
+    survey by adding technologies, softskills, and freetext for each of his or her
+    colleagues. The will enable Red Hat to better understand multiple aspects of
+    a consultant's skillset.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Feedback 360 Survey API
+  version: 2.0.0
+externalDocs:
+  description: App Dev Practice
+  url: https://mojo.redhat.com/docs/DOC-1208144
+servers:
+- description: LOCAL
+  url: http://localhost:3007
+- description: Spring Boot Service that implements the Feedback 360 Survey API on
+    DEV Cluster
+  url: http://survey-service-consultant-360-dev.apps.shared-dev.dev.openshift.opentlc.com
+- description: Spring Boot Service that implements the Feedback 360 Survey API on
+    PROD Cluster
+  url: http://survey-service-consultant-360-prod.apps.shared-dev.dev.openshift.opentlc.com
+tags:
+- name: employee
+- name: surveyGroup
+- name: skills
+- name: surveySubmission
+- name: userProfile
+paths:
+  /surveygroups:
+    get:
+      description: |
+        Get all survey groups in Feedback 360 Survey API.
+      operationId: getAllSurveyGroups
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SurveyGroup'
+                type: array
+          description: A list of survey groups is returned. The Survey Group object
+            returned will not have the Employee Assignments or Default Skills hydrated.
+      summary: Get all survey groups from Feedback 360 Survey API.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+    post:
+      description: |
+        A survey group is the starting point for creating a Feedback 360 Survey. A survey group contains the project information, list of employees on the project that will receive the survey, and a list of technologies used on the project.
+      operationId: createSurveyGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveyGroup'
+        description: A new survey group resource contained in the request body.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyGroup'
+          description: The survey group was successfully created. The location of
+            the new survey group resource is in the location header of the response.
+          headers:
+            location:
+              description: The URI of the survey group resource that was just created.
+              example: http://api.server.com/projects/f9238beb-9649-4983-9059-4f0ee372d56e
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "400":
+          description: The survey group contained in the request body is invalid.
+        "401":
+          description: The survey group cannot be created because the user has not
+            been authorized.
+        "409":
+          description: The survey group matching the details already exists.
+      summary: Create a new survey group in the Feedback 360 Survey API.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /surveygroups/{surveyGroupId}:
+    delete:
+      description: |
+        This operation will delete an entire survey group and all child resources  associated with it. This operation is idempotent.
+      operationId: deleteSurveyGroupByID
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: The survey group represented by the supplied GUID is deleted
+            from the system.
+      summary: Disable a survey group from Feedback 360 Survey API.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+    get:
+      description: Returns a single survey group matching the given ID.
+      operationId: getSurveyGroupById
+      parameters:
+      - description: ID of the survey group as a GUID.
+        examples:
+          GUID:
+            value: '"08bb3e66-8562-11ea-9325-b78f2fb687bf"'
+          GUID1:
+            value: '"1be550b2-8562-11ea-8472-a79387e009b6"'
+          GUID2:
+            value: '"1be5db9a-8562-11ea-9e63-6f41b6cb1594"'
+          GUID3:
+            value: '"1be65b2e-8562-11ea-b3f3-4b445ce3dd26"'
+          GUID4:
+            value: '"1be6e35a-8562-11ea-a6b6-7b0bee9af2fd"'
+          GUID5:
+            value: '"1be76d70-8562-11ea-b47e-8ba65ab4185f"'
+          GUID6:
+            value: '"1be7ee4e-8562-11ea-bae7-2fc8cdbc3d29"'
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyGroup'
+          description: A representation of the survey group matching the given surveyGroupID.
+        "400":
+          description: 'Id must be formatted as a UUID '
+        "401":
+          description: The Survey Group matching the given surveyGroupId has been
+            disabled.  Please contact the Project Manager for more information"
+        "404":
+          description: A survey group matching the given surveyGroupId was not found.
+      summary: Find a survey group resource by ID
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+    put:
+      description: |
+        This representation of the survey group contained in this request will replace  the survey group located at this URI. This operation is idempotent.
+      operationId: updateSurveyGroupByID
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveyGroup'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyGroup'
+          description: The survey group represented by the supplied GUID has been
+            updated with the contents of this request.
+        "400":
+          description: The survey group was not updated. Something is wrong with the
+            request like a missing required field.
+        "404":
+          description: This surveygroup was not found
+      summary: |
+        Update a Survey Group in Feedback 360 Survey API.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /surveygroups/{surveyGroupId}/submissions:
+    get:
+      description: |
+        A submission contains all the ratings for the skills for a colleague receiving feedback.
+        This operation will return all submissions submitted for a survey group. An empty
+        resource collection is a valid response and indicates no feedback has been
+        submitted.
+      operationId: getSurveyGroupSubmissions
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SurveySubmission'
+                type: array
+          description: A list of the feedback submission resources for a survey group.
+            An empty list is valid if the survey group does not have any submissions.
+        "404":
+          description: The survey group given by the surveyGroupId does not exist.
+      summary: Find all submissions associated to a survey group.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /surveygroups/{surveyGroupId}/defaultSkill:
+    post:
+      description: |
+        When a default skill is added to a survey group all survey submissions created for the survey group will include the default skill.
+      operationId: addDefaultSkill
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                description: Id of the Skill
+                example: f9238beb-9649-4983-9059-4f0ee372d56e
+                format: uuid
+                type: string
+              type: array
+        description: An array of skillIds contained in the request body.
+        required: true
+      responses:
+        "201":
+          description: The Default Skills were successfully created.
+          headers:
+            location:
+              description: The URI of the survey group resource that was just created
+                for.
+              example: http://api.server.com/projects/f9238beb-9649-4983-9059-4f0ee372d56e
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "400":
+          description: The Skills or Survey Group contained in the request body are
+            invalid.
+        "401":
+          description: The Skills or Survey Group cannot be created because the user
+            have not been authorized.
+        "409":
+          description: The Skills and Survey Group matching the details already exist.
+      summary: Add a default skill to a survey group.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+    put:
+      description: |
+        When a default skill is added to a survey group all survey submissions created for the survey group will include the default skill.
+      operationId: updateDefaultSkills
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                description: Id of the Skill
+                example: f9238beb-9649-4983-9059-4f0ee372d56e
+                format: uuid
+                type: string
+              type: array
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyGroupEntity'
+          description: The survey group represented by the supplied GUID has been
+            updated with the contents of this request.
+        "400":
+          description: The survey group was not updated. Something is wrong with the
+            request like a missing required field.
+      summary: |
+        Update the default skills for a survey group.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /surveygroups/{surveyGroupId}/defaultSkill/{defaultSkillId}:
+    delete:
+      description: |
+        This operation will delete the given default skill from the survey group.
+      operationId: deleteDefaultSkill
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      - description: ID of the Default Skill as a GUID.
+        explode: false
+        in: path
+        name: defaultSkillId
+        required: true
+        schema:
+          example: f9238bea-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: The Default Skill has been removed from the survey group.
+      summary: Delete default skills for a Survey Group.
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /employee:
+    get:
+      description: |
+        This operation fetches a full list of employees available in the Feedback 360 Survey API.  The filtering and sorting mechanism for fetching this list is yet To Be Determined.  The Employees in the Feedback 360 Survey API data store will be populated from outside resources such as LDAP or Rover.
+      operationId: getEmployees
+      parameters:
+      - description: Field by which to filter results.
+        example: name
+        explode: true
+        in: query
+        name: filterBy
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: String to filter on, query string
+        example: Frank
+        explode: true
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Field by which to sort
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Sort Order
+        explode: true
+        in: query
+        name: sortOrder
+        required: false
+        schema:
+          enum:
+          - ASC
+          - DESC
+          type: string
+        style: form
+      - description: Page offset
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          format: int32
+          type: integer
+        style: form
+      - description: Maximum number of results to return, defaults to 20
+        example: 20
+        explode: true
+        in: query
+        name: maxResults
+        required: false
+        schema:
+          format: int32
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Employee'
+                type: array
+          description: A list resource collection of Employees.
+      summary: List all employees available in the Feedback 360 Survey API.
+      tags:
+      - employee
+      x-eov-operation-handler: controllers/EmployeeController
+  /employee/{employeeId}:
+    get:
+      description: Returns a single employee matching the given ID.
+      operationId: getEmployeeById
+      parameters:
+      - description: Kerberos ID of the employee.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: A representation of the employee matching the given employeeId.
+        "404":
+          description: An employee matching the given employeeId was not found.
+      summary: Find an Employee resource by ID
+      tags:
+      - employee
+      x-eov-operation-handler: controllers/EmployeeController
+    put:
+      description: |
+        The representation of the employee contained in this request will replace the employee located at this URI. This operation is idempotent.
+      operationId: updateEmployeeByID
+      parameters:
+      - description: Kerberos ID of the employee.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: The employee represented by the supplied userid has been updated
+            with the contents of this request.
+        "400":
+          description: The employee was not updated. Something is wrong with the request
+            like a missing required field.
+        "404":
+          description: This employee was not found
+      summary: |
+        Update an Employee resource by ID
+      tags:
+      - employee
+      x-eov-operation-handler: controllers/EmployeeController
+  /surveySubmission/{surveySubmissionId}:
+    delete:
+      description: |
+        This operation will disable a survey submission and all child resources  associated with it. This operation is idempotent.
+      operationId: disableSurveySubmission
+      parameters:
+      - description: ID of the survey submission as a GUID.
+        explode: false
+        in: path
+        name: surveySubmissionId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: The survey submission represented by the supplied GUID is disabled.
+      summary: Disable a surveySubmission from Feedback 360 Survey API.
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+    get:
+      description: Returns a survey submission matching the submission ID.
+      operationId: getSurveySubmissionById
+      parameters:
+      - description: ID of the surveyGroup as a GUID.
+        explode: false
+        in: path
+        name: surveySubmissionId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveySubmissionWithSkillRating'
+          description: Survey submission associated with the survey submission resource
+            ID
+        "404":
+          description: An survey submission matching the given submission ID was not
+            found.
+      summary: Fetch the survey submission associated with the survey submission resource
+        ID
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+    put:
+      description: |
+        This representation of the survey submission contained in this request will replace  the survey submission located at this URI. This operation is idempotent. TODO
+      operationId: updateSurveySubmissionByID
+      parameters:
+      - description: ID of the employee assignment as a GUID.
+        explode: false
+        in: path
+        name: surveySubmissionId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveySubmissionWithSkillRating'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveySubmissionEntity'
+          description: The survey submission assignment represented by the supplied
+            GUID has been updated with the contents of this request.
+        "400":
+          description: The survey submission was not updated. Something is wrong with
+            the request like a missing required field.
+      summary: |
+        Update a survey Submission in Feedback 360 Survey API.
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+  /surveySubmission/reviewedBy/{employeeId}:
+    get:
+      description: Returns all survey submissions that have been reviewed by the employee
+        ID.
+      operationId: getReviewedByByEmployeeId
+      parameters:
+      - description: Employee's RedHat Kerberos ID.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SurveySubmission'
+                type: array
+          description: Survey submissions associated with the survey submission resource
+            ID
+        "404":
+          description: Survey submissions matching the given employee ID were not
+            found.
+      summary: Fetch the survey submissions reviewed by the given employee Id.
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+  /surveySubmission/reviewedOn/{employeeId}:
+    get:
+      description: Returns all survey submissions that the employee has been reviewed
+        on.
+      operationId: getReviewedOnByEmployeeId
+      parameters:
+      - description: Employee's RedHat Kerberos ID.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SurveySubmission'
+                type: array
+          description: Survey submissions associated that the employee was reviewed
+            on.
+        "404":
+          description: Survey submissions matching the given employee ID were not
+            found.
+      summary: Fetch the survey submissions that the given employee Id was reviewed
+        on.
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+  /surveySubmission/surveyGroup/{surveyGroupId}:
+    get:
+      description: Returns all survey submissions that are part of the SurveyGroup.
+      operationId: getSurveySubmissionsBySurveyGroupId
+      parameters:
+      - description: ID of the surveyGroup as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SurveySubmission'
+                type: array
+          description: Survey submissions associated with the Survey Group resource
+            ID
+        "404":
+          description: Survey submissions matching the given Survey Group ID were
+            not found.
+      summary: Fetch the survey submissions associated with the Survey Group.
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+  /skills:
+    get:
+      description: Returns all skills that are active in the Skills table.
+      operationId: getAllSkills
+      parameters:
+      - description: Field by which to filter
+        example: skill
+        explode: true
+        in: query
+        name: filterBy
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: String to filter on, query string
+        example: Openshift
+        explode: true
+        in: query
+        name: filterString
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Field by which to sort
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Sort Order
+        explode: true
+        in: query
+        name: sortOrder
+        required: false
+        schema:
+          enum:
+          - ASC
+          - DESC
+          type: string
+        style: form
+      - description: Page offset
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          format: int32
+          type: integer
+        style: form
+      - description: Maximum number of results to return, defaults to 20
+        example: 20
+        explode: true
+        in: query
+        name: maxResults
+        required: false
+        schema:
+          format: int32
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Skill'
+                type: array
+          description: List of Skills that are available.
+      summary: Fetch all the skills available to be added on a survey submission.
+      tags:
+      - skills
+      x-eov-operation-handler: controllers/SkillsController
+  /surveygroups/{surveyGroupId}/assignment:
+    get:
+      description: |-
+        This request will return an array of Employee objects which are associated with
+        a particular survey group.
+      operationId: getEmployeesBySurveyGroup
+      parameters:
+      - explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/EmployeeAssignmentWithEmployee'
+                type: array
+          description: Get a list of employees assigned to a survey group
+      summary: Get list of assigned employees for a given survey group
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /surveygroups/{surveyGroupId}/assignment/{employeeId}:
+    delete:
+      description: Remove an employee association with a survey group
+      operationId: removeEmployeeAssignment
+      parameters:
+      - examples:
+          GUID:
+            value: '"1bea1106-8562-11ea-aee6-7721eaea325b"'
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - examples:
+          GUID:
+            value: '"1bea1106-8562-11ea-aee6-7721eaea325b"'
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: The employee ID was successfully dissociated from the survey
+            group
+        "404":
+          description: The specified employee ID or survey group ID was not found
+      summary: Remove an employee association with a survey group
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+    post:
+      description: Assign an employee under their GUID to a survey group
+      operationId: assignEmployeeToSurveyGroup
+      parameters:
+      - examples:
+          GUID:
+            value: '"1bea1106-8562-11ea-aee6-7721eaea325b"'
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeAssignment'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeAssignment'
+          description: The employee was associated with the survey group successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Validations failed for the Employee Assignment.
+        "401":
+          description: |-
+            The currently authenticated user is not authorized to associated employees
+            with survey groups.
+        "404":
+          description: Either the employee GUID or the survey group GUID were not
+            found
+      summary: Assign an employee under their GUID to a survey group
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+    put:
+      description: Allows for updating start/end date and perhaps role f
+      operationId: updateEmployeeAssignment
+      parameters:
+      - examples:
+          GUID:
+            value: '"1bea1106-8562-11ea-aee6-7721eaea325b"'
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - examples:
+          consultant:
+            value: ajones
+          architect:
+            value: wendy
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeAssignment'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeAssignment'
+          description: The employee assignment was updated successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+          description: Validations failed for the Employee Assignment.
+        "401":
+          description: |-
+            The currently authenticated user is not authorized to associated employees
+            with survey groups.
+        "404":
+          description: Either the employee ID or the survey group GUID were not found
+      summary: Allows for updating start/end date and perhaps role for an existing
+        assignment
+      tags:
+      - surveyGroup
+      x-eov-operation-handler: controllers/SurveyGroupController
+  /employee/{employeeId}/surveyGroups:
+    get:
+      description: Returns a List of Survey Groups matching the given employee ID.
+      operationId: getSurveyGroupByEmployeeId
+      parameters:
+      - description: Employee's RedHat Kerberos ID.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/EmployeeAssignmentWithSurveyGroup'
+                type: array
+          description: A List of Survey Groups matching the given employeeId.
+        "404":
+          description: An employee matching the given employeeId was not found.
+      summary: Find an all Survey Groups an employee is part of resource by ID
+      tags:
+      - employee
+      x-eov-operation-handler: controllers/EmployeeController
+  /surveygroups/{surveyGroupId}/createSurveySubmissions:
+    post:
+      description: Returns a List of Employees in which surveys where created.
+      operationId: createSurveySubmissions
+      parameters:
+      - description: ID of the survey group as a GUID.
+        explode: false
+        in: path
+        name: surveyGroupId
+        required: true
+        schema:
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Employee'
+                type: array
+          description: The survey submissions were successfully created and a List
+            of Employees in which surveys where created for is returned.
+        "400":
+          description: The survey group contained in the request is invalid.
+        "401":
+          description: The survey submission cannot be created because the user has
+            not been authorized.
+      summary: Create a batch of SurveySubmissions for a survey group in the Feedback
+        360 Survey API.
+      tags:
+      - surveySubmission
+      x-eov-operation-handler: controllers/SurveySubmissionController
+  /userprofile:
+    get:
+      description: For the currently authenticated user, return the user profile information
+      operationId: getUserProfile
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: The available user information
+      tags:
+      - userProfile
+      x-eov-operation-handler: controllers/UserProfileController
+    put:
+      description: |
+        The representation of the user profile contained in this request will replace the user profile. This operation is idempotent.
+      operationId: updateUserProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: The user profile has been updated with the contents of this
+            request.
+        "400":
+          description: The user profile was not updated. Something is wrong with the
+            request like a missing required field.
+        "404":
+          description: This user profile was not found
+      summary: |
+        Update the user profile resource
+      tags:
+      - userProfile
+      x-eov-operation-handler: controllers/UserProfileController
+  /usageagreement:
+    get:
+      description: The latest usage agreement
+      operationId: getUsageAgreement
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageAgreement'
+          description: The content of the usage agreement.
+      tags:
+      - usageAgreement
+      x-eov-operation-handler: controllers/UsageAgreementController
+  /rmo/profile/{employeeId}/skills:
+    get:
+      description: Return a Map<project,skills> of all the projects an employee is
+        part of and a list of skills that the employee used at each project.
+      operationId: getEmployeeSkillsHistory
+      parameters:
+      - description: Kerberos ID of the employee.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/EmployeeSkillHistory'
+                type: array
+          description: A list of all the project and corresponding skills associated
+            with an employee.
+        "404":
+          description: No projects were found for the given employee.
+      summary: Find a list of all the project and corresponding skills associated
+        with an employee.
+      tags:
+      - RMOUserProfile
+      x-eov-operation-handler: controllers/RMOUserProfileController
+  /rmo/profile/{employeeId}/aggregateRatings:
+    get:
+      description: Return a Map<skill,rating> of all the the skills that the employee
+        has been rated on 3 or more times.
+      operationId: getEmployeeAggregateSkillRatings
+      parameters:
+      - description: Kerberos ID of the employee.
+        explode: false
+        in: path
+        name: employeeId
+        required: true
+        schema:
+          example: ajones
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/EmployeeAggregateSkillRatings'
+                type: array
+          description: Aggregate Skill Ratings for each skill that the employee has
+            be rated on 3 or more times.
+        "404":
+          description: No skills with more than three ratings were found for the given
+            employee.
+      summary: Find a list ggregate Skill Ratings for each skill that the employee
+        has be rated on 3 or more times.
+      tags:
+      - RMOUserProfile
+      x-eov-operation-handler: controllers/RMOUserProfileController
+components:
+  schemas:
+    EmployeeEntity:
+      allOf:
+      - $ref: '#/components/schemas/Employee'
+      properties:
+        assignments:
+          description: Projects for which the employee has been assigned to a SurveyGroup
+          items:
+            $ref: '#/components/schemas/EmployeeAssignment'
+          type: array
+          x-java-field-annotations:
+          - '@javax.persistence.OneToMany(mappedBy = "employee")'
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - |-
+        @javax.persistence.Table(
+          name = "employees",
+          uniqueConstraints = {
+            @javax.persistence.UniqueConstraint(columnNames = {"email"})
+          }
+        )
+    Employee:
+      example:
+        role: Consultant
+        dateTermsAccepted: 2021-02-09T00:00:00.000+0000
+        name: John Smith
+        termsVersionNumber: 1.0
+        id: jsmith@redhat.com
+        hasAcceptedTerms: false
+        email: jsmith@redhat.com
+      properties:
+        id:
+          description: Employee's RedHat Kerberos ID
+          example: jsmith@redhat.com
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+        name:
+          description: Name of the employee.
+          example: John Smith
+          type: string
+        email:
+          description: The email address of the employee.
+          example: jsmith@redhat.com
+          type: string
+          x-java-field-annotation:
+          - '"@org.hibernate.annotations.Formula("CONCAT(id, ''@redhat.com'')")"'
+        role:
+          description: The role of the employee. For example, consultant, PM, TSM,
+            etc.
+          example: Consultant
+          type: string
+        hasAcceptedTerms:
+          description: Whether the employee has accepted the terms of the usage agreement.
+          example: false
+          type: boolean
+          x-java-field-annotations:
+          - '@javax.persistence.Transient'
+        dateTermsAccepted:
+          description: The date the employee accepted the terms of the usage agreement.
+          example: 2021-02-09
+          format: date
+          type: string
+        termsVersionNumber:
+          description: The version number of terms of the usage agreement.
+          example: 1.0
+          format: float
+          type: number
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.MappedSuperclass'
+    EmployeeAssignmentWithSurveyGroup:
+      allOf:
+      - $ref: '#/components/schemas/SurveyGroup'
+      example:
+        endDate: 2000-01-23T04:56:07.000+00:00
+        billableRole: billableRole
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        startDate:
+          description: The start date of this employee's assignment
+          format: date-time
+          type: string
+        endDate:
+          description: The end date of this employee's assignment
+          format: date-time
+          type: string
+        billableRole:
+          description: The billing role that is assigned for the project (May not
+            match actual title)
+          type: string
+      type: object
+    SurveyGroupEntity:
+      allOf:
+      - $ref: '#/components/schemas/SurveyGroup'
+      example:
+        assignments:
+        - endDate: 2000-01-23T04:56:07.000+00:00
+          billableRole: Consultant
+          id: f9238beb-9649-4983-9059-4f0ee372d56e
+          surveyGroup: '{}'
+          employee: '{}'
+          startDate: 2000-01-23T04:56:07.000+00:00
+        - endDate: 2000-01-23T04:56:07.000+00:00
+          billableRole: Consultant
+          id: f9238beb-9649-4983-9059-4f0ee372d56e
+          surveyGroup: '{}'
+          employee: '{}'
+          startDate: 2000-01-23T04:56:07.000+00:00
+        disabled: false
+      properties:
+        assignments:
+          items:
+            $ref: '#/components/schemas/EmployeeAssignment'
+          type: array
+          x-java-field-annotations:
+          - '@javax.persistence.OneToMany'
+          - '@javax.persistence.JoinColumn(name = "survey_group_id")'
+        disabled:
+          default: false
+          description: A flag indicating if this Survey Group is disabled
+          example: false
+          type: boolean
+          x-java-field-annotations:
+          - '@javax.persistence.Column(nullable = false)'
+      required:
+      - opportunityId
+      - projectCreatorId
+      - projectName
+      - tsmId
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - '@javax.persistence.Table(name = "survey_groups")'
+    SurveyGroup:
+      example:
+        tsmId: timmytsm@redhat.com
+        opportunityId: 3456NAS
+        createdDate: 2000-01-23T04:56:07.000+00:00
+        defaultSkills:
+        - skillsBaseId: 1234
+          skill: Crucial Conversations
+          description: The ability to have crucial conversations with clients.
+          active: true
+          id: d567521f-13a6-4237-936c-40bbbf388bc5
+          category: leadership
+        - skillsBaseId: 1234
+          skill: Crucial Conversations
+          description: The ability to have crucial conversations with clients.
+          active: true
+          id: d567521f-13a6-4237-936c-40bbbf388bc5
+          category: leadership
+        createdBy: janedoe
+        modifiedDate: 2000-01-23T04:56:07.000+00:00
+        modifiedBy: janedoe
+        id: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+        projectName: NASA App Modernization
+        projectCreatorId: janedoe@redhat.com
+      properties:
+        id:
+          description: A GUID that uniquely identifies the SurveyGroup.
+          example: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+          format: uuid
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+          - '@javax.persistence.GeneratedValue(generator = "UUID")'
+          - '@org.hibernate.annotations.GenericGenerator(name = "UUID", strategy =
+            "org.hibernate.id.UUIDGenerator")'
+          - '@javax.persistence.Column(name = "id", updatable = false, nullable =
+            false)'
+        createdDate:
+          description: The date the project was created in the Feedback 360 Survey
+            API in UTC.
+          format: date-time
+          readOnly: true
+          type: string
+          x-java-field-annotations:
+          - '@org.springframework.data.annotation.CreatedDate'
+        createdBy:
+          description: The employee id (Kerberos) of the user that created the project.
+          example: janedoe
+          type: string
+          x-java-field-annotations:
+          - '@org.springframework.data.annotation.CreatedBy'
+        modifiedDate:
+          description: The date the project was last modified in the Feedback 360
+            Survey API in UTC.
+          format: date-time
+          readOnly: true
+          type: string
+          x-java-field-annotations:
+          - '@org.springframework.data.annotation.LastModifiedDate'
+        modifiedBy:
+          description: The employee id (Kerberos) of the user that last modifed the
+            project.
+          example: janedoe
+          type: string
+          x-java-field-annotations:
+          - '@org.springframework.data.annotation.LastModifiedBy'
+        opportunityId:
+          description: The ID of the Opportunity from PSA.
+          example: 3456NAS
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Column(unique = true)'
+        projectName:
+          description: The name of the project.
+          example: NASA App Modernization
+          type: string
+        projectCreatorId:
+          description: The email address of the creator of the project.
+          example: janedoe@redhat.com
+          type: string
+        tsmId:
+          description: The email address of the TSM in charge of the project.
+          example: timmytsm@redhat.com
+          type: string
+        defaultSkills:
+          items:
+            $ref: '#/components/schemas/Skill'
+          type: array
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToMany'
+          - |-
+            @javax.persistence.JoinTable(
+                name = "default_survey_skills",
+                joinColumns = @javax.persistence.JoinColumn(name = "survey_group_id"),
+                inverseJoinColumns = @javax.persistence.JoinColumn(name = "skill_id"),
+                uniqueConstraints = @javax.persistence.UniqueConstraint(columnNames = {"survey_group_id", "skill_id"})
+            )
+      required:
+      - opportunityId
+      - projectCreatorId
+      - projectName
+      - tsmId
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.MappedSuperclass'
+      - '@javax.persistence.EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)'
+    Skill:
+      example:
+        skillsBaseId: 1234
+        skill: Crucial Conversations
+        description: The ability to have crucial conversations with clients.
+        active: true
+        id: d567521f-13a6-4237-936c-40bbbf388bc5
+        category: leadership
+      properties:
+        id:
+          description: A GUID that uniquely identifies a skill.
+          example: d567521f-13a6-4237-936c-40bbbf388bc5
+          format: uuid
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+          - '@javax.persistence.GeneratedValue(generator = "UUID")'
+          - '@org.hibernate.annotations.GenericGenerator(name = "UUID",strategy =
+            "org.hibernate.id.UUIDGenerator")'
+          - '@javax.persistence.Column(name = "id", updatable = false, nullable =
+            false)'
+        skillsBaseId:
+          description: An id from skills base
+          example: 1234
+          type: integer
+        skill:
+          description: The name of the skill.
+          example: Crucial Conversations
+          type: string
+        description:
+          description: A description of the skill.
+          example: The ability to have crucial conversations with clients.
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Column(length=512)'
+        category:
+          description: The general category of the skill.
+          example: leadership
+          type: string
+        active:
+          default: true
+          description: Boolean to state if this skill is active
+          example: true
+          type: boolean
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - '@javax.persistence.Table(name = "skills")'
+    SurveySubmissionEntity:
+      allOf:
+      - $ref: '#/components/schemas/SurveySubmission'
+      example:
+        surveySubjectEntity: '{}'
+        ratings:
+        - null
+        - null
+        surveyAuthorEntity: '{}'
+        disabled: false
+        surveyGroup: '{}'
+      properties:
+        surveyGroup:
+          allOf:
+          - $ref: '#/components/schemas/SurveyGroupEntity'
+          description: A GUID that uniquely identifies the project.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToOne'
+          - '@javax.persistence.JoinColumn(name = "survey_group_id")'
+        ratings:
+          description: SkillRatings for the subject employee
+          items:
+            $ref: '#/components/schemas/SkillRatingEntity'
+          type: array
+          x-java-field-annotations:
+          - '@javax.persistence.OneToMany(cascade = javax.persistence.CascadeType.ALL,
+            orphanRemoval=true)'
+          - '@javax.persistence.JoinColumn(name = "survey_submission_id")'
+        surveyAuthorEntity:
+          allOf:
+          - $ref: '#/components/schemas/EmployeeEntity'
+          description: The Kerberos Id for the employee that is answering the questions
+            of the survey.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToOne'
+          - '@javax.persistence.JoinColumn(name = "survey_author_id")'
+        surveySubjectEntity:
+          allOf:
+          - $ref: '#/components/schemas/EmployeeAssignment'
+          description: A Kerberos Id for the employee that is being reviewed.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToOne'
+          - '@javax.persistence.JoinColumn(name = "survey_subject_id")'
+        disabled:
+          default: false
+          description: A flag indicating if this Survey Submission is disabled
+          example: false
+          type: boolean
+          x-java-field-annotations:
+          - '@javax.persistence.Column(nullable = false)'
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - '@javax.persistence.Table(name = "survey_submissions", uniqueConstraints={
+        @javax.persistence.UniqueConstraint(columnNames={"survey_group_id", "survey_author_id",
+        "survey_subject_id"}) })'
+    SurveySubmissionWithSkillRating:
+      allOf:
+      - $ref: '#/components/schemas/SurveySubmission'
+      example:
+        ratings:
+        - skill: '{}'
+          rating: 0
+          id: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+        - skill: '{}'
+          rating: 0
+          id: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+        surveyGroup: '{}'
+      properties:
+        surveyGroup:
+          allOf:
+          - $ref: '#/components/schemas/SurveyGroup'
+          description: A GUID that uniquely identifies the project.
+          type: object
+        ratings:
+          description: SkillRatings for the subject employee
+          items:
+            $ref: '#/components/schemas/SkillRating'
+          type: array
+      type: object
+    SurveySubmission:
+      example:
+        feedback: John was a pleasure to work with and extremely knowledgeable in
+          REST.
+        submissionStatus: Complete
+        surveyAuthor: '{}'
+        submissionDate: 2000-01-23T04:56:07.000+00:00
+        id: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+        surveySubject: '{}'
+      properties:
+        id:
+          description: A GUID that uniquely identifies a survey submitted for a project.
+          example: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+          format: uuid
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+          - '@javax.persistence.GeneratedValue(generator = "UUID")'
+          - '@org.hibernate.annotations.GenericGenerator(name = "UUID",strategy =
+            "org.hibernate.id.UUIDGenerator")'
+          - '@javax.persistence.Column(name = "id", updatable = false, nullable =
+            false)'
+        surveyAuthor:
+          allOf:
+          - $ref: '#/components/schemas/Employee'
+          description: Employee that is reviewing.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.Transient'
+        surveySubject:
+          allOf:
+          - $ref: '#/components/schemas/EmployeeAssignment'
+          description: Employee that is being reviewed.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.Transient'
+        submissionDate:
+          description: The date the survey was submitted to the Feedback 360 Survey
+            API in UTC.
+          format: date-time
+          type: string
+        submissionStatus:
+          description: Returns a status of "Complete" or "Incomplete"
+          enum:
+          - Complete
+          - Incomplete
+          example: Complete
+          type: string
+        feedback:
+          description: Any feedback the author of the survey would like to include
+            in the rating.
+          example: John was a pleasure to work with and extremely knowledgeable in
+            REST.
+          type: string
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.MappedSuperclass'
+    SkillRatingEntity:
+      allOf:
+      - $ref: '#/components/schemas/SkillRating'
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - '@javax.persistence.Table( name = "skill_rating", uniqueConstraints={ @javax.persistence.UniqueConstraint(columnNames={"skill_id",
+        "survey_submission_id"}) })'
+    SkillRating:
+      example:
+        skill: '{}'
+        rating: 0
+        id: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+      properties:
+        id:
+          description: A GUID that uniquely identifies a skill rathing.
+          example: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+          format: uuid
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+          - '@javax.persistence.GeneratedValue(generator = "UUID")'
+          - '@org.hibernate.annotations.GenericGenerator(name = "UUID",strategy =
+            "org.hibernate.id.UUIDGenerator")'
+          - '@javax.persistence.Column(name = "id", updatable = false, nullable =
+            false)'
+        skill:
+          allOf:
+          - $ref: '#/components/schemas/Skill'
+          description: A GUID that uniquely identifies a skill.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToOne'
+          - '@javax.persistence.JoinColumn(name = "skill_id", nullable=false)'
+        rating:
+          description: The rating -1 -> 4 of the skill. -1 - 'Not Applicable', 0 -
+            No Experience, 1 - Foundational, 2 - Experienced, 3 - Advanced, 4 - Expert
+          maximum: 4
+          minimum: -1
+          type: integer
+      required:
+      - skillId
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.MappedSuperclass'
+    EmployeeAssignmentWithEmployee:
+      description: |-
+        A type specifically to facilitate the UI. Combines aspects of
+        EmployeeAssignment and fields from Employee
+      example:
+        endDate: 2000-01-23T04:56:07.000+00:00
+        name: John Smith
+        billableRole: Consultant
+        employeeId: jqConsultant
+        id: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+        email: jsmith@redhat.com
+        startDate: 2000-01-23T04:56:07.000+00:00
+        employeeRole: Senior Consultant
+      properties:
+        id:
+          description: The Employee Assignment ID as a GUUID
+          example: f1ad7649-eb70-4499-9c82-a63fe2c6dc71
+          format: uuid
+          type: string
+        employeeId:
+          description: The Employee Kerboros ID
+          example: jqConsultant
+          type: string
+        name:
+          description: Name of the employee.
+          example: John Smith
+          type: string
+        email:
+          description: The email address of the employee.
+          example: jsmith@redhat.com
+          type: string
+        startDate:
+          description: The start date of this employee's assignment
+          format: date-time
+          type: string
+        endDate:
+          description: The end date of this employee's assignment
+          format: date-time
+          type: string
+        billableRole:
+          description: Role that the employee is billed for on the project.
+          example: Consultant
+          type: string
+        employeeRole:
+          description: Employee's Red Hat Role.
+          example: Senior Consultant
+          type: string
+      required:
+      - startDate
+      type: object
+    EmployeeAssignment:
+      example:
+        endDate: 2000-01-23T04:56:07.000+00:00
+        billableRole: Consultant
+        id: f9238beb-9649-4983-9059-4f0ee372d56e
+        surveyGroup: '{}'
+        employee: '{}'
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          description: A GUID that uniquely identifies the project.
+          example: f9238beb-9649-4983-9059-4f0ee372d56e
+          format: uuid
+          type: string
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+          - '@javax.persistence.GeneratedValue(generator = "UUID")'
+          - '@org.hibernate.annotations.GenericGenerator(name = "UUID", strategy =
+            "org.hibernate.id.UUIDGenerator")'
+          - '@javax.persistence.Column(name = "id", updatable = false, nullable =
+            false)'
+        employee:
+          allOf:
+          - $ref: '#/components/schemas/EmployeeEntity'
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToOne(cascade = javax.persistence.CascadeType.REMOVE)'
+          - '@javax.persistence.JoinColumn(name = "employee_id", nullable=false)'
+        surveyGroup:
+          allOf:
+          - $ref: '#/components/schemas/SurveyGroupEntity'
+          description: The unique ID of the SurveyGroup associated with the opportunity.
+          type: object
+          x-java-field-annotations:
+          - '@javax.persistence.ManyToOne'
+          - '@javax.persistence.JoinColumn(name = "survey_group_id", nullable=false)'
+        startDate:
+          description: The date the employee started the project.
+          format: date-time
+          type: string
+        endDate:
+          description: The employee's end date on the project.
+          format: date-time
+          type: string
+        billableRole:
+          description: Role that the employee is billed for on the project..
+          example: Consultant
+          type: string
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - '@javax.persistence.Table( name = "employee_assignments", uniqueConstraints={
+        @javax.persistence.UniqueConstraint(columnNames={"employee_id", "survey_group_id"})
+        })'
+    GenericError:
+      properties:
+        message:
+          description: Specific error message
+          type: string
+        rootCause:
+          description: Optional root rootCause
+          type: string
+      type: object
+    UsageAgreement:
+      example:
+        end_date: 2000-01-23
+        text: text
+        version: 0.8008282
+        start_date: 2000-01-23
+      properties:
+        text:
+          description: The contents of the usage agreement.
+          type: string
+        version:
+          description: The verison of the agreement
+          format: float
+          type: number
+          x-java-field-annotations:
+          - '@javax.persistence.Id'
+          - '@javax.persistence.Column(name = "version", updatable = true, nullable
+            = false)'
+        start_date:
+          description: The date the agreement began
+          format: date
+          type: string
+        end_date:
+          description: The date the agreement expires
+          format: date
+          type: string
+      type: object
+      x-java-class-annotations:
+      - '@javax.persistence.Entity'
+      - '@javax.persistence.Table( name = "usage_agreement_terms", uniqueConstraints={
+        @javax.persistence.UniqueConstraint(columnNames={"version"}) })'
+    EmployeeSkillHistory:
+      example:
+        skills:
+        - Spring
+        - Spring
+        project: Bank of America
+      properties:
+        project:
+          description: Name of project that consultant was part of
+          example: Bank of America
+          type: string
+        skills:
+          description: Array of skills that the consultant used at the project
+          items:
+            example: Spring
+            type: string
+          type: array
+      type: object
+    EmployeeAggregateSkillRatings:
+      example:
+        skill: Spring
+        rating: 5
+      properties:
+        skill:
+          description: Skill that the consultant was rated on
+          example: Spring
+          type: string
+        rating:
+          description: Aggregate skill rating for the above skill
+          example: 5
+          type: integer
+      type: object
